@@ -1,0 +1,259 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"ips\": [\n    \"34.52.238.9\",\n    \"87.236.176.98\",\n    \"103.149.28.105\",\n    \"167.94.146.45\",\n    \"194.180.48.163\",\n    \"147.185.132.176\",\n    \"47.82.11.84\",\n    \"58.225.220.117\",\n  \n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        -192
+      ],
+      "id": "68193546-a81a-4b69-a0ba-3ae61bb62a95",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "url": "https://api.abuseipdb.com/api/v2/check",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "ipAddress",
+              "value": "={{$json.ip}}"
+            },
+            {
+              "name": "maxAgeInDays",
+              "value": "90"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Key",
+              "value": "YOUR_ABUSEIPDB_API_KEY"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1168,
+        -192
+      ],
+      "id": "83861c13-5f81-4add-a1b2-bc6fd492fcc3",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input IP array from the previous node\nconst ips = $json.ips; // $json refers to current item\n\n// Transform each IP into a new item for n8n workflow\nreturn ips.map(ip => {\n  return { json: { ip: ip } };\n});\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -192
+      ],
+      "id": "401a5742-9cad-4538-a213-0ed9e0655717",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const THRESHOLD = 50;\n\n// $items() gets all items from the previous node\nconst allItems = $items();\n\nconst results = [];\n\nfor (const item of allItems) {\n  const data = item.json.data; // access data from each HTTP Request item\n  if (!data) continue;         // skip if no data\n\n  // Ensure we have an array to loop (some endpoints return single object)\n  const ips = Array.isArray(data) ? data : [data];\n\n  for (const ip of ips) {\n    if (ip.abuseConfidenceScore >= THRESHOLD) {\n      results.push({\n        json: {\n          ip: ip.ipAddress,\n          score: ip.abuseConfidenceScore,\n          country: ip.countryCode,\n          reports: ip.totalReports,\n          lastReported: ip.lastReportedAt\n        }\n      });\n    }\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        -192
+      ],
+      "id": "625362f3-85ed-46e2-9c51-66c7840025ff",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        336,
+        -192
+      ],
+      "id": "23800cd9-bb91-4fd8-a572-f21fbc5d6f61",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1iR5KOTrTuN3-M8uKIjfTEzAc6vft4V_CfZfFsJ2hMBI",
+          "mode": "list",
+          "cachedResultName": "Malicious IP",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iR5KOTrTuN3-M8uKIjfTEzAc6vft4V_CfZfFsJ2hMBI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iR5KOTrTuN3-M8uKIjfTEzAc6vft4V_CfZfFsJ2hMBI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ip",
+              "displayName": "ip",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reports",
+              "displayName": "reports",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastReported",
+              "displayName": "lastReported",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1776,
+        -192
+      ],
+      "id": "c90ac49e-ce81-46b2-b5bb-9c37ab75e336",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "A1QJT05sC0sxma0p",
+          "name": "Google Sheets account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e750a086-afc7-42dc-9b29-d3c1a8fde386",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b3a81ccd0ff88c02a9780b6eee081544532751a6fefbddf3708f76f5e0e46825"
+  },
+  "id": "Dt1esKGi2xn9Jk6L",
+  "tags": []
+}
